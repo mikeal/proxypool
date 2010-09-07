@@ -32,9 +32,7 @@ var sys = require('sys')
   , max = 100
   ;
 
-
-
-exports.createProxy = function () {
+exports.createProxy = function (l) {
   var manager = pool.createPoolManager();
   manager.setMinClients(min);
   manager.setMaxClients(max);
@@ -75,14 +73,18 @@ exports.createProxy = function () {
         }
 
         reverse_proxy.addListener('response', function (response) {
+          if (response.headers.connection) {
+            if (req.headers.connection) response.headers.connection = req.headers.connection
+            else response.headers.connection = 'close'
+          }
           res.writeHead(response.statusCode, response.headers);
-
           sys.pump(response, res);
         });
       })
 
     });
   })
+  if (l) server.on('route', l);
   return server;
 };
 
